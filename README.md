@@ -1,4 +1,4 @@
-# Project Title: Save That Money Budget Application
+# Project Title: Easy Budget Application
 
 ---
 
