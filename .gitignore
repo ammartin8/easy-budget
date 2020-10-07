@@ -7,3 +7,5 @@
 .env.production.local
 
 easy_budget.ipynb
+
+budgetdata.db
