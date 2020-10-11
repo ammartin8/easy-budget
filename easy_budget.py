@@ -13,9 +13,10 @@ db = SqliteDatabase('budgetdata.db')
 
 
 class Entry(Model):
+    ID = AutoField()
     Timestamp = DateTimeField(default=datetime.datetime.now)
     Budget_item_date = DateField(default=datetime.datetime.now)
-    Value_type = CharField(default="Noclene")
+    Value_type = CharField(default="None")
     Item_name = CharField()
     Amount = DecimalField(decimal_places=2, auto_round=True)
     Category = CharField(default="None")
@@ -50,7 +51,7 @@ def menu_loop():
             menu[menu_choice]()
 
 
-def add_entry():
+def add_record():
     """Add New Record Entry"""
     while True:
         entry_choice = input(
@@ -71,7 +72,46 @@ def view_records():
     records = Entry.select().order_by(Entry.Value_type, Entry.Budget_item_date.desc())
 
     for record in records:
-        print(f'{record.Budget_item_date} \t {record.Item_name} \t {record.Amount} \t {record.Category} {record.Value_type} \t ')
+        record = f'{record.ID}) {record.Budget_item_date} \t {record.Item_name} \t {record.Amount} \t {record.Category} {record.Value_type} \t '
+        print(record)
+
+    rec_choice = input(
+        "Select a number if you want to view a specific record. Enter q to quit to main menu: ")
+    while rec_choice.lower() != 'q':
+        if rec_choice.lower() in Entry.ID:
+            records = Entry.select().where(Entry.ID == rec_choice)
+            for item in records:
+                print(f"ID: {item.ID}")
+                print(f"Date: {item.Budget_item_date}")
+                print(f"Item: {item.Item_name}")
+                print(f"Amount: {item.Amount}")
+                print(f"Category: {item.Category}")
+                print(f"Type: {item.Value_type} \n\n")
+
+            print("1) Edit this entry")
+            print("2) Delete this entry")
+            print("Press 'q' to go back to main menu")
+
+            next_choice = input("Please select an option:  ")
+            if next_choice.strip(")") == '1':
+                edit_record()
+                break
+            elif next_choice.strip(")") == '2':
+                delete_record()
+                break
+            elif next_choice.lower().strip() == 'q':
+                break
+
+
+
+def edit_record():
+    """Edit A Record"""
+    pass
+
+
+def delete_record():
+    """Delete A Record"""
+    pass
 
 
 def add_expense_record():
@@ -83,7 +123,8 @@ def add_expense_record():
         # Choose a Category
         for key, value in expense_categories.items():
             print(f'{key}) {value}')
-        category_choice = input("Choose an Expense Category or Enter 'q' to quit. ").strip()
+        category_choice = input(
+            "Choose an Expense Category or Enter 'q' to quit. ").strip()
         if category_choice.upper() == 'Q':
             break
 
@@ -92,7 +133,6 @@ def add_expense_record():
 
         expense_date = input(
             "Enter the date of the expense. Please use MM/DD/YYYY format. ")
-
 
         try:
             budget_item_date = datetime.datetime.strptime(
@@ -181,8 +221,9 @@ def add_income_record():
 
 
 menu = OrderedDict([
-    ('1', add_entry),
+    ('1', add_record),
     ('2', view_records),
+    # ('3', delete_record),
 ])
 
 expense_categories = OrderedDict([
