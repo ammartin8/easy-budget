@@ -69,7 +69,7 @@ def add_record():
 
 def view_records():
     """View List of Budget Items"""
-    records = Entry.select().order_by(Entry.Value_type, Entry.Budget_item_date.desc())
+    records = Entry.select().order_by(Entry.Budget_item_date, Entry.Value_type.desc())
 
     for record in records:
         record = f'{record.ID}) {record.Budget_item_date} \t {record.Item_name} \t {record.Amount} \t {record.Category} {record.Value_type} \t '
@@ -79,14 +79,14 @@ def view_records():
         "Select a number if you want to view a specific record. Enter q to quit to main menu: ")
     while rec_choice.lower() != 'q':
         if rec_choice.lower() in Entry.ID:
-            records = Entry.select().where(Entry.ID == rec_choice)
-            for item in records:
-                print(f"ID: {item.ID}")
-                print(f"Date: {item.Budget_item_date}")
-                print(f"Item: {item.Item_name}")
-                print(f"Amount: {item.Amount}")
-                print(f"Category: {item.Category}")
-                print(f"Type: {item.Value_type} \n\n")
+            record = Entry.get(Entry.ID == rec_choice)
+            # for item in record:
+            print(f"ID: {record.ID}")
+            print(f"Date: {record.Budget_item_date}")
+            print(f"Item: {record.Item_name}")
+            print(f"Amount: {record.Amount}")
+            print(f"Category: {record.Category}")
+            print(f"Type: {record.Value_type} \n\n")
 
             print("1) Edit this entry")
             print("2) Delete this entry")
@@ -97,7 +97,7 @@ def view_records():
                 edit_record()
                 break
             elif next_choice.strip(")") == '2':
-                delete_record()
+                delete_record(record)
                 break
             elif next_choice.lower().strip() == 'q':
                 break
@@ -109,9 +109,11 @@ def edit_record():
     pass
 
 
-def delete_record():
+def delete_record(record):
     """Delete A Record"""
-    pass
+    if input("Are you sure? [y/n]").lower() == 'y':
+        record.delete_instance()
+        print("Record Deleted!")
 
 
 def add_expense_record():
