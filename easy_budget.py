@@ -1,6 +1,7 @@
 # Pseudo-code
 # python packages
 from collections import OrderedDict  # keeps options in order we want
+from prettytable import PrettyTable
 import datetime
 import os
 import sys
@@ -11,15 +12,19 @@ from peewee import *
 
 db = SqliteDatabase('budgetdata.db')
 
+# Creating Pretty Table
+x = PrettyTable()
+
 
 class Entry(Model):
-    ID = AutoField()
+    id = AutoField()
     Timestamp = DateTimeField(default=datetime.datetime.now)
-    Budget_item_date = DateField(default=datetime.datetime.now)
-    Value_type = CharField(default="None")
-    Item_name = CharField()
-    Amount = DecimalField(decimal_places=2, auto_round=True)
-    Category = CharField(default="None")
+    budget_item_date = DateField(
+        default=datetime.datetime.now, verbose_name="date")
+    value_type = CharField(default="None")
+    item_name = CharField()
+    amount = DecimalField(decimal_places=2, auto_round=True)
+    category = CharField(default="None")
 
     class Meta:
         database = db
@@ -69,24 +74,24 @@ def add_record():
 
 def view_records():
     """View List of Budget Items"""
-    records = Entry.select().order_by(Entry.Budget_item_date, Entry.Value_type.desc())
+    records = Entry.select().order_by(
+        Entry.id, Entry.budget_item_date, Entry.value_type.desc())
 
     for record in records:
-        record = f'{record.ID}) {record.Budget_item_date} \t {record.Item_name} \t {record.Amount} \t {record.Category} {record.Value_type} \t '
+        record = f'{record.id}) {record.budget_item_date} \t {record.item_name} \t {record.amount} \t {record.category} {record.value_type} \t '
         print(record)
 
     rec_choice = input(
         "Select a number if you want to view a specific record. Enter q to quit to main menu: ")
     while rec_choice.lower() != 'q':
-        if rec_choice.lower() in Entry.ID:
-            record = Entry.get(Entry.ID == rec_choice)
-            # for item in record:
-            print(f"ID: {record.ID}")
-            print(f"Date: {record.Budget_item_date}")
-            print(f"Item: {record.Item_name}")
-            print(f"Amount: {record.Amount}")
-            print(f"Category: {record.Category}")
-            print(f"Type: {record.Value_type} \n\n")
+        if rec_choice.lower() in Entry.id:
+            record = Entry.get(Entry.id == rec_choice)
+            print(f"id: {record.id}")
+            print(f"Date: {record.budget_item_date}")
+            print(f"Item: {record.item_name}")
+            print(f"Amount: {record.amount}")
+            print(f"Category: {record.category}")
+            print(f"Type: {record.value_type} \n\n")
 
             print("1) Edit this entry")
             print("2) Delete this entry")
@@ -94,7 +99,7 @@ def view_records():
 
             next_choice = input("Please select an option:  ")
             if next_choice.strip(")") == '1':
-                edit_record()
+                edit_record(record)
                 break
             elif next_choice.strip(")") == '2':
                 delete_record(record)
@@ -103,10 +108,61 @@ def view_records():
                 break
 
 
-
-def edit_record():
+def edit_record(record):
     """Edit A Record"""
-    pass
+    date_format = '%m/%d/%Y'
+    # rec_columns = record._meta.fields
+    # for num, cols in enumerate(rec_columns, start=1):
+    #     print(num, cols.upper())
+    print(f"Date: {record.budget_item_date}")
+    print(f"Item: {record.item_name}")
+    print(f"Amount: {record.amount}")
+    print(f"Category: {record.category}")
+    print(f"Type: {record.value_type} \n\n")
+
+    column_choice = input(
+        "What field do you want to edit? ")
+
+    if column_choice == "date":
+        date_update_input = input("Enter new date in mm/dd/yyyy format: ")
+        try:
+            record.budget_item_date = datetime.datetime.strptime(
+                date_update_input, date_format)
+            record.save()
+            print("Record has been updated!")
+        except ValueError:
+            print("Not a valid date. Please try again.")
+
+    if column_choice == "item":
+        item_update_input = input("Enter new item name: ")
+        try:
+            record.item_name = item_update_input.upper()
+            record.save()
+            print("Record has been updated!")
+        except ValueError:
+            print("Not a valid input. Please try again.")
+
+    if column_choice == "amount":
+        amount_update_input = input("Enter new amount in $$.$$ format: ")
+        try:
+            record.amount = amount_update_input
+            record.save()
+            print("Record has been updated!")
+        except ValueError:
+            print("Not a valid input. Please try again.")
+
+    if column_choice == "category":
+        for key, value in expense_categories.items():
+            print(f'{key}) {value}')
+        category_update_choice = input("Enter new category: ")
+
+        if category_update_choice in expense_categories:
+            try:
+                record.category = expense_categories[category_update_choice]
+                record.save()
+                print("Record has been updated!")
+            except ValueError:
+                print("Not a valid input. Please try again.")
 
 
 def delete_record(record):
@@ -122,11 +178,11 @@ def add_expense_record():
     value_type = "expense"
     # Enter Date of Expense - may need unittest here
     while True:
-        # Choose a Category
+        # Choose a category
         for key, value in expense_categories.items():
             print(f'{key}) {value}')
         category_choice = input(
-            "Choose an Expense Category or Enter 'q' to quit. ").strip()
+            "Choose an Expense category or Enter 'q' to quit. ").strip()
         if category_choice.upper() == 'Q':
             break
 
@@ -152,12 +208,12 @@ def add_expense_record():
 
         item_name = input("Enter item name: ").upper()
         print(
-            f"The following record has been entered: \n Item: {item_name}\n Amount: ${amount} \n Date:{budget_item_date} \n Category={category} Type: {value_type}")
+            f"The following record has been entered: \n Item: {item_name}\n amount: ${amount} \n Date:{budget_item_date} \n category={category} Type: {value_type}")
 
         save_choice = input("Would you like to save? [y/n]: ")
         if save_choice.lower() != 'n':
-            Entry.create(Budget_item_date=budget_item_date, Item_name=item_name,
-                         Amount=amount, Category=category, Value_type=value_type)
+            Entry.create(budget_item_date=budget_item_date, item_name=item_name,
+                         amount=amount, category=category, value_type=value_type)
             print("Record Saved!")
         else:
             print("Entry not saved")
@@ -175,10 +231,10 @@ def add_income_record():
     value_type = "income"
 
     while True:
-        # Choose a Category
+        # Choose a category
         for key, value in income_categories.items():
             print(f'{key}) {value}')
-        category_choice = input("Choose an Income Category: ").strip()
+        category_choice = input("Choose an Income category: ").strip()
 
         if category_choice in income_categories:
             category = income_categories[category_choice]
@@ -205,12 +261,12 @@ def add_income_record():
 
         item_name = input("Enter item name: ").upper()
         print(
-            f"The following record has been entered: \n Item: {item_name}\n Amount: ${amount} \n Date:{budget_item_date} \n Category: {category} Type: {value_type}")
+            f"The following record has been entered: \n Item: {item_name}\n amount: ${amount} \n Date:{budget_item_date} \n category: {category} Type: {value_type}")
 
         save_choice = input("Would you like to save? [y/n]: ")
         if save_choice.lower() != 'n':
-            Entry.create(Budget_item_date=budget_item_date, Item_name=item_name,
-                         Amount=amount, Category=category, Value_type=value_type)
+            Entry.create(budget_item_date=budget_item_date, item_name=item_name,
+                         amount=amount, category=category, value_type=value_type)
             print("Record Saved!")
         else:
             print("Entry not saved")
