@@ -1,7 +1,7 @@
 # Pseudo-code
 # python packages
 from collections import OrderedDict  # keeps options in order we want
-from prettytable import PrettyTable
+from prettytable import PrettyTable, from_db_cursor
 import datetime
 import os
 import sys
@@ -11,9 +11,6 @@ import sys
 from peewee import *
 
 db = SqliteDatabase('budgetdata.db')
-
-# Creating Pretty Table
-x = PrettyTable()
 
 
 class Entry(Model):
@@ -74,38 +71,40 @@ def add_record():
 
 def view_records():
     """View List of Budget Items"""
-    records = Entry.select().order_by(
-        Entry.id, Entry.budget_item_date, Entry.value_type.desc())
-
-    for record in records:
-        record = f'{record.id}) {record.budget_item_date} \t {record.item_name} \t {record.amount} \t {record.category} {record.value_type} \t '
-        print(record)
+    cursor = db.execute_sql(
+        "SELECT id as ID, budget_item_date as Date, item_name as Item, amount as Amount, category as Category FROM entry")
+    myTable = from_db_cursor(cursor)
+    print(myTable)
 
     rec_choice = input(
         "Select a number if you want to view a specific record. Enter q to quit to main menu: ")
     while rec_choice.lower() != 'q':
-        if rec_choice.lower() in Entry.id:
-            record = Entry.get(Entry.id == rec_choice)
-            print(f"id: {record.id}")
-            print(f"Date: {record.budget_item_date}")
-            print(f"Item: {record.item_name}")
-            print(f"Amount: {record.amount}")
-            print(f"Category: {record.category}")
-            print(f"Type: {record.value_type} \n\n")
+        try:
+            if rec_choice.lower() in Entry.id:
+                record = Entry.get(Entry.id == rec_choice)
+                print(f"id: {record.id}")
+                print(f"Date: {record.budget_item_date}")
+                print(f"Item: {record.item_name}")
+                print(f"Amount: {record.amount}")
+                print(f"Category: {record.category}")
+                print(f"Type: {record.value_type} \n\n")
 
-            print("1) Edit this entry")
-            print("2) Delete this entry")
-            print("Press 'q' to go back to main menu")
+                print("1) Edit this entry")
+                print("2) Delete this entry")
+                print("Press 'q' to go back to main menu")
 
-            next_choice = input("Please select an option:  ")
-            if next_choice.strip(")") == '1':
-                edit_record(record)
-                break
-            elif next_choice.strip(")") == '2':
-                delete_record(record)
-                break
-            elif next_choice.lower().strip() == 'q':
-                break
+                next_choice = input("Please select an option:  ")
+                if next_choice.strip(")") == '1':
+                    edit_record(record)
+                    break
+                elif next_choice.strip(")") == '2':
+                    delete_record(record)
+                    break
+                elif next_choice.lower().strip() == 'q':
+                    break
+        except:
+            print("Not a valid option. Please try again.")
+            break
 
 
 def edit_record(record):
@@ -216,7 +215,7 @@ def add_expense_record():
                          amount=amount, category=category, value_type=value_type)
             print("Record Saved!")
         else:
-            print("Entry not saved")
+            print("Record not saved")
 
         cont_choice = input("Would you like to add another item? [y/n] ")
         if cont_choice.lower() == 'y':
@@ -281,7 +280,6 @@ def add_income_record():
 menu = OrderedDict([
     ('1', add_record),
     ('2', view_records),
-    # ('3', delete_record),
 ])
 
 expense_categories = OrderedDict([

@@ -31,7 +31,7 @@ The following modules are used to run this application:
 - datetime
 - os
 - sys
-- peewee
+- [peewee](https://docs.peewee-orm.com/en/latest/index.html)
 
 ## Features
 
