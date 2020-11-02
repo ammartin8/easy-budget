@@ -41,6 +41,14 @@ The following modules are used to run this application:
   2. User will have the ability to view list of expenses and income records in table format
   3. User will have the ability to view expenses and savings in chart and graph format
 
+- The following requirements are completed for this program:
+
+  1. Implement a “master loop” console application where the user can repeatedly enter commands/perform actions, including choosing to exit the program
+  2. Create a dictionary or list, populate it with several values, retrieve at least one value, and use it in your program
+  3. Create a class, then create at least one object of that class and populate it with data
+  4. Create and call at least 3 functions, at least one of which must return a value that is used
+  5. Visualize data in a graph, chart, or other visual representation of data
+
 ## Milestones
 
 1. Create functions needed to add, remove, and edit expenses and income entries (Week 7)

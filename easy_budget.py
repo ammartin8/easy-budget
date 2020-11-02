@@ -13,25 +13,41 @@ from peewee import *
 db = SqliteDatabase('budgetdata.db')
 
 
-class Entry(Model):
+class BaseModel(Model):
     id = AutoField()
     Timestamp = DateTimeField(default=datetime.datetime.now)
-    budget_item_date = DateField(
-        default=datetime.datetime.now, verbose_name="date")
-    value_type = CharField(default="None")
-    item_name = CharField()
-    amount = DecimalField(decimal_places=2, auto_round=True)
-    category = CharField(default="None")
+
 
     class Meta:
         database = db
 
 
+class ExpenseList(BaseModel):
+    budget_item_date = DateField(
+        default=datetime.datetime.now, verbose_name="date")
+    value_type = CharField(default="expense")
+    item_name = CharField()
+    amount = DecimalField(decimal_places=2, auto_round=True)
+    category = CharField(default="None")
+
+
+class IncomeList(BaseModel):
+    budget_item_date = DateField(
+        default=datetime.datetime.now, verbose_name="date")
+    value_type = CharField(default="income")
+    item_name = CharField()
+    amount = DecimalField(decimal_places=2, auto_round=True)
+    category = CharField(default="None")
+
 def initialize():
     """Create a new database if it doesn't exist"""
     db.connect()
-    db.create_tables([Entry], safe=True)
+    db.create_tables([BaseModel], safe=True)
+    db.create_tables([ExpenseList], safe=True)
+    db.create_tables([IncomeList], safe=True)
 
+def clear_cli():
+    pass
 
 # Say welcome to the easy budget app!
 print("Welcome to the Easy Budget App! The interactive application that keeps track of all your expenses!")
@@ -54,7 +70,7 @@ def menu_loop():
 
 
 def add_record():
-    """Add New Record Entry"""
+    """Add New Record"""
     while True:
         entry_choice = input(
             "Would you like to add a new expense item or income item? [e/i]: ")  # bug when entering anything other than e/i
@@ -71,17 +87,34 @@ def add_record():
 
 def view_records():
     """View List of Budget Items"""
-    cursor = db.execute_sql(
-        "SELECT id as ID, budget_item_date as Date, item_name as Item, amount as Amount, category as Category FROM entry")
+    view_choice = input("Do you want to view the expense table or income table? [e/i]")
+    if view_choice.lower() == "e":
+        table_view = ExpenseList
+        cursor = db.execute_sql(
+            """SELECT id as ID,
+            budget_item_date as Date, item_name as Item, amount as Amount, category as Category
+            FROM ExpenseList
+            """)
+
+    elif view_choice.lower() == "i":
+        table_view = IncomeList
+        cursor = db.execute_sql(
+            """SELECT id as ID,
+            budget_item_date as Date, item_name as Item, amount as Amount, category as Category
+            FROM IncomeList
+            """)
     myTable = from_db_cursor(cursor)
     print(myTable)
 
+    # Add a method to edit records
+
     rec_choice = input(
         "Select a number if you want to view a specific record. Enter q to quit to main menu: ")
+
     while rec_choice.lower() != 'q':
         try:
-            if rec_choice.lower() in Entry.id:
-                record = Entry.get(Entry.id == rec_choice)
+            if rec_choice.lower() in table_view.id:
+                record = table_view.get(table_view.id == rec_choice)
                 print(f"id: {record.id}")
                 print(f"Date: {record.budget_item_date}")
                 print(f"Item: {record.item_name}")
@@ -110,9 +143,8 @@ def view_records():
 def edit_record(record):
     """Edit A Record"""
     date_format = '%m/%d/%Y'
-    # rec_columns = record._meta.fields
-    # for num, cols in enumerate(rec_columns, start=1):
-    #     print(num, cols.upper())
+
+
     print(f"Date: {record.budget_item_date}")
     print(f"Item: {record.item_name}")
     print(f"Amount: {record.amount}")
@@ -199,23 +231,28 @@ def add_expense_record():
             continue
 
         try:  # test negative values
-            amount = round(float(
-                input("Enter cost amount in $$.$$ format ")), 2)
+            amount = input("Enter cost amount in $$.$$ format ")
         except ValueError:
             print("That's not a valid cost. Please try again.")
             continue
 
         item_name = input("Enter item name: ").upper()
         print(
-            f"The following record has been entered: \n Item: {item_name}\n amount: ${amount} \n Date:{budget_item_date} \n category={category} Type: {value_type}")
+            f"The following record has been entered: \n Item: {item_name}\n amount: ${amount} \n Date:{budget_item_date} \n Category: {category} \n Type: {value_type}")
 
-        save_choice = input("Would you like to save? [y/n]: ")
-        if save_choice.lower() != 'n':
-            Entry.create(budget_item_date=budget_item_date, item_name=item_name,
-                         amount=amount, category=category, value_type=value_type)
-            print("Record Saved!")
-        else:
-            print("Record not saved")
+        while True:
+            save_choice = input("Would you like to save? [y/n]: ")
+            if save_choice.lower() == 'y':
+                ExpenseList.create(budget_item_date=budget_item_date, item_name=item_name,
+                            amount=amount, category=category, value_type=value_type)
+                print("Record Saved!")
+                break
+            elif save_choice.lower() == 'n':
+                print("Record not saved")
+                break
+            elif save_choice.lower() != 'y' or save_choice.lower() != 'n':
+                print("Not a valid choice. Please try again.")
+                continue
 
         cont_choice = input("Would you like to add another item? [y/n] ")
         if cont_choice.lower() == 'y':
@@ -252,23 +289,28 @@ def add_income_record():
             continue
 
         try:
-            amount = float(
-                input("Enter amount in $$.$$ format "))
+            amount = input("Enter amount in $$.$$ format ")
         except ValueError:
             print("That's not a valid amount. Please try again.")
             continue
 
         item_name = input("Enter item name: ").upper()
         print(
-            f"The following record has been entered: \n Item: {item_name}\n amount: ${amount} \n Date:{budget_item_date} \n category: {category} Type: {value_type}")
+            f"The following record has been entered: \n Item: {item_name}\n amount: ${amount} \n Date:{budget_item_date} \n category: {category} \n Type: {value_type}")
 
-        save_choice = input("Would you like to save? [y/n]: ")
-        if save_choice.lower() != 'n':
-            Entry.create(budget_item_date=budget_item_date, item_name=item_name,
-                         amount=amount, category=category, value_type=value_type)
-            print("Record Saved!")
-        else:
-            print("Entry not saved")
+        while True:
+            save_choice = input("Would you like to save? [y/n]: ")
+            if save_choice.lower() == 'y':
+                IncomeList.create(budget_item_date=budget_item_date, item_name=item_name,
+                            amount=amount, category=category, value_type=value_type)
+                print("Record Saved!")
+                break
+            elif save_choice.lower() == 'n':
+                print("Record not saved")
+                break
+            elif save_choice.lower() != 'y' or save_choice.lower() != 'n':
+                print("Not a valid choice. Please try again.")
+                continue
 
         cont_choice = input("Would you like to add another item? [y/n] ")
         if cont_choice.lower() == 'y':
