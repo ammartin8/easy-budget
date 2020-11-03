@@ -1,6 +1,5 @@
-# Pseudo-code
 # python packages
-from collections import OrderedDict  # keeps options in order we want
+from collections import OrderedDict  # keeps list of options in order we want
 from prettytable import PrettyTable, from_db_cursor
 import datetime
 import os
@@ -14,15 +13,13 @@ db = SqliteDatabase('budgetdata.db')
 
 
 class BaseModel(Model):
-    id = AutoField()
-    Timestamp = DateTimeField(default=datetime.datetime.now)
-
-
     class Meta:
         database = db
 
 
 class ExpenseList(BaseModel):
+    id = AutoField()
+    Timestamp = DateTimeField(default=datetime.datetime.now)
     budget_item_date = DateField(
         default=datetime.datetime.now, verbose_name="date")
     value_type = CharField(default="expense")
@@ -32,12 +29,19 @@ class ExpenseList(BaseModel):
 
 
 class IncomeList(BaseModel):
+    id = AutoField()
+    Timestamp = DateTimeField(default=datetime.datetime.now)
     budget_item_date = DateField(
         default=datetime.datetime.now, verbose_name="date")
     value_type = CharField(default="income")
     item_name = CharField()
     amount = DecimalField(decimal_places=2, auto_round=True)
     category = CharField(default="None")
+
+
+class SummaryTable():
+    pass
+
 
 def initialize():
     """Create a new database if it doesn't exist"""
@@ -46,8 +50,10 @@ def initialize():
     db.create_tables([ExpenseList], safe=True)
     db.create_tables([IncomeList], safe=True)
 
+
 def clear_cli():
     pass
+
 
 # Say welcome to the easy budget app!
 print("Welcome to the Easy Budget App! The interactive application that keeps track of all your expenses!")
@@ -87,7 +93,8 @@ def add_record():
 
 def view_records():
     """View List of Budget Items"""
-    view_choice = input("Do you want to view the expense table or income table? [e/i]")
+    view_choice = input(
+        "Do you want to view the expense table or income table? [e/i]")
     if view_choice.lower() == "e":
         table_view = ExpenseList
         cursor = db.execute_sql(
@@ -103,10 +110,9 @@ def view_records():
             budget_item_date as Date, item_name as Item, amount as Amount, category as Category
             FROM IncomeList
             """)
+    # from_db_cursor creates the pretty table using results from cursor object and saves to myTable
     myTable = from_db_cursor(cursor)
     print(myTable)
-
-    # Add a method to edit records
 
     rec_choice = input(
         "Select a number if you want to view a specific record. Enter q to quit to main menu: ")
@@ -143,7 +149,6 @@ def view_records():
 def edit_record(record):
     """Edit A Record"""
     date_format = '%m/%d/%Y'
-
 
     print(f"Date: {record.budget_item_date}")
     print(f"Item: {record.item_name}")
@@ -231,20 +236,20 @@ def add_expense_record():
             continue
 
         try:  # test negative values
-            amount = input("Enter cost amount in $$.$$ format ")
+            amount = "%.2f" % int(input("Enter cost amount in $$.$$ format "))
         except ValueError:
             print("That's not a valid cost. Please try again.")
             continue
 
         item_name = input("Enter item name: ").upper()
         print(
-            f"The following record has been entered: \n Item: {item_name}\n amount: ${amount} \n Date:{budget_item_date} \n Category: {category} \n Type: {value_type}")
+            "The following record has been entered: \n Item: {}\n amount: ${} \n Date:{} \n Category: {} \n Type: {}".format(item_name, amount, budget_item_date, category, value_type))
 
         while True:
             save_choice = input("Would you like to save? [y/n]: ")
             if save_choice.lower() == 'y':
                 ExpenseList.create(budget_item_date=budget_item_date, item_name=item_name,
-                            amount=amount, category=category, value_type=value_type)
+                                   amount=amount, category=category, value_type=value_type)
                 print("Record Saved!")
                 break
             elif save_choice.lower() == 'n':
@@ -289,20 +294,20 @@ def add_income_record():
             continue
 
         try:
-            amount = input("Enter amount in $$.$$ format ")
+            amount = "%.2f" % int(input("Enter cost amount in $$.$$ format "))
         except ValueError:
             print("That's not a valid amount. Please try again.")
             continue
 
         item_name = input("Enter item name: ").upper()
         print(
-            f"The following record has been entered: \n Item: {item_name}\n amount: ${amount} \n Date:{budget_item_date} \n category: {category} \n Type: {value_type}")
+            "The following record has been entered: \n Item: {}\n amount: ${} \n Date:{} \n Category: {} \n Type: {}".format(item_name, "%.2f" % int(amount), budget_item_date, category, value_type))
 
         while True:
             save_choice = input("Would you like to save? [y/n]: ")
             if save_choice.lower() == 'y':
                 IncomeList.create(budget_item_date=budget_item_date, item_name=item_name,
-                            amount=amount, category=category, value_type=value_type)
+                                  amount=amount, category=category, value_type=value_type)
                 print("Record Saved!")
                 break
             elif save_choice.lower() == 'n':
@@ -319,9 +324,29 @@ def add_income_record():
             break
 
 
+def summary_report():
+    """View Summary Report"""
+    # Show total Expenses for the month
+    total_expenses = ExpenseList.select(fn.Sum(ExpenseList.amount).alias('Total Expenses')).scalar()
+    if total_expenses == None: # potential use case for dunder str method to re-write None to 0
+        total_expenses = "0"
+    print("Total amount of expenses spent: ${}".format("%.2f" % int(total_expenses)))
+
+    # Show total Income for the month
+    total_income = IncomeList.select(fn.Sum(IncomeList.amount).alias('Total Income')).scalar()
+    if total_income == None:
+        total_income = "0"
+    print("Total amount of income earned: ${}".format("%.2f" % int(total_income)))
+
+    # Show the remaining balance for the month
+    remaining_balance = int(total_income) - int(total_expenses)
+    print("Your remaining balance: ${}".format("%.2f" % int(remaining_balance)))
+
+
 menu = OrderedDict([
     ('1', add_record),
     ('2', view_records),
+    ('3', summary_report),
 ])
 
 expense_categories = OrderedDict([
