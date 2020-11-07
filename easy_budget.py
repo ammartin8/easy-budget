@@ -4,6 +4,7 @@ from prettytable import PrettyTable, from_db_cursor
 import datetime
 import os
 import sys
+import pandas as pd
 
 
 # Third-party packages
@@ -327,10 +328,19 @@ def summary_report():
         "%.2f" % float(remaining_balance)))
 
 
+# Pandas Analysis
+def run_pandas():
+    """View Pandas Dataframe (Testing)"""
+    df = pd.read_sql_query("SELECT * FROM Records", db)
+
+
+    print(df)
+
 menu = OrderedDict([
     ('1', add_record),
     ('2', view_records),
     ('3', summary_report),
+    ('4', run_pandas),
 ])
 
 expense_categories = OrderedDict([
