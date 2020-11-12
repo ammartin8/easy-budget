@@ -5,7 +5,8 @@ import datetime
 import os
 import sys
 import pandas as pd
-
+from matplotlib import pyplot as plt
+from matplotlib import dates as mpl_dates
 
 # Third-party packages
 from peewee import *
@@ -22,15 +23,15 @@ class Records(BaseModel):
     id = AutoField()
     Timestamp = DateTimeField(default=datetime.datetime.now)
     budget_item_date = DateField(
-        default=datetime.datetime.now, verbose_name="date")
+        default=datetime.datetime.now().date(), verbose_name="date")
     value_type = CharField(default=None)
     item_name = CharField()
     amount = DecimalField(decimal_places=2, auto_round=True)
     category = CharField(default="None")
-
-
-class SummaryTable():
-    pass
+    budget_item_month = DateField(
+        default=datetime.date.today().month)
+    budget_item_year = DateField(
+        default=datetime.date.today().year)
 
 
 def initialize():
@@ -103,12 +104,15 @@ def add_expense_record():
         try:
             budget_item_date = datetime.datetime.strptime(
                 expense_date, date_format)
+            budget_item_month = budget_item_date.month
+            budget_item_year = budget_item_date.year
         except ValueError:
             print("That's not a valid date. Please try again.")
             continue
 
         try:  # test negative values
-            amount = "%.2f" % float(input("Enter cost amount in $$.$$ format "))
+            amount = "%.2f" % float(
+                input("Enter cost amount in $$.$$ format "))
         except ValueError:
             print("That's not a valid cost. Please try again.")
             continue
@@ -121,7 +125,8 @@ def add_expense_record():
             save_choice = input("Would you like to save? [y/n]: ")
             if save_choice.lower() == 'y':
                 Records.create(budget_item_date=budget_item_date, item_name=item_name,
-                                   amount=amount, category=category, value_type=value_type)
+                               amount=amount, category=category, value_type=value_type,
+                               budget_item_month=budget_item_month, budget_item_year=budget_item_year)
                 print("Record Saved!")
                 break
             elif save_choice.lower() == 'n':
@@ -161,12 +166,15 @@ def add_income_record():
         try:
             budget_item_date = datetime.datetime.strptime(
                 income_date, date_format)
+            budget_item_month = budget_item_date.month
+            budget_item_year = budget_item_date.year
         except ValueError:
             print("That's not a valid date. Please try again.")
             continue
 
         try:
-            amount = "%.2f" % float(input("Enter cost amount in $$.$$ format "))
+            amount = "%.2f" % float(
+                input("Enter cost amount in $$.$$ format "))
         except ValueError:
             print("That's not a valid amount. Please try again.")
             continue
@@ -179,7 +187,8 @@ def add_income_record():
             save_choice = input("Would you like to save? [y/n]: ")
             if save_choice.lower() == 'y':
                 Records.create(budget_item_date=budget_item_date, item_name=item_name,
-                                  amount=amount, category=category, value_type=value_type)
+                               amount=amount, category=category, value_type=value_type,
+                               budget_item_month=budget_item_month, budget_item_year=budget_item_year)
                 print("Record Saved!")
                 break
             elif save_choice.lower() == 'n':
@@ -201,7 +210,13 @@ def view_records():
     table_view = Records
     cursor = db.execute_sql(
         """SELECT id as ID,
-        strftime("%m-%d-%Y",budget_item_date) as Date, item_name as Item, amount as Amount, category as Category, value_type as Type
+        strftime("%m-%d-%Y",budget_item_date) as Date
+        , item_name as Item
+        , amount as Amount
+        , category as Category
+        , value_type as Type
+        , budget_item_month as Month
+        , budget_item_year as Year
         FROM Records
         """)
 
@@ -237,8 +252,7 @@ def view_records():
                 elif next_choice.lower().strip() == 'q':
                     break
         except:
-            print("Not a valid option. Please try again.")
-            break
+            return print("Not a valid option. Please try again.")
 
 
 def edit_record(record):
@@ -259,10 +273,12 @@ def edit_record(record):
         try:
             record.budget_item_date = datetime.datetime.strptime(
                 date_update_input, date_format)
+            record.budget_item_month = record.budget_item_date.month
+            record.budget_item_year = record.budget_item_date.year
             record.save()
             print("Record has been updated!")
         except ValueError:
-            print("Not a valid date. Please try again.")
+            return print("Not a valid date. Please try again.")
 
     if column_choice == "2":
         item_update_input = input("Enter new item name: ")
@@ -320,7 +336,8 @@ def summary_report():
         fn.Sum(Records.amount).alias('Total Income')).where(Records.value_type == "income").scalar()
     if total_income == None:
         total_income = "0"
-    print("Total amount of income earned: ${}".format("%.2f" % float(total_income)))
+    print("Total amount of income earned: ${}".format(
+        "%.2f" % float(total_income)))
 
     # Show the remaining balance for the month
     remaining_balance = float(total_income) - float(total_expenses)
@@ -331,10 +348,21 @@ def summary_report():
 # Pandas Analysis
 def run_pandas():
     """View Pandas Dataframe (Testing)"""
+    # for month in Records.budget_item_month:
+    #     print(month)
+
     df = pd.read_sql_query("SELECT * FROM Records", db)
+    month_date = df['budget_item_month']
+    amount_total = df['amount']
+    budget_type = df['value_type']
+    categories = df['category']
+
+    plt.bar(budget_type, amount_total)
+    plt.show()
 
 
-    print(df)
+
+
 
 menu = OrderedDict([
     ('1', add_record),
