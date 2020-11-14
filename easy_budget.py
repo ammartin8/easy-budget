@@ -119,7 +119,12 @@ def add_expense_record():
 
         item_name = input("Enter item name: ").upper()
         print(
-            "The following record has been entered: \n Item: {}\n Amount: ${} \n Date:{} \n Category: {} \n Type: {}".format(item_name, amount, budget_item_date, category, value_type))
+            """The following record has been entered:
+            \n Item: {}
+            \n Amount: ${}
+            \n Date:{}
+            \n Category: {}
+            \n Type: {}""".format(item_name, amount, budget_item_date, category, value_type))
 
         while True:
             save_choice = input("Would you like to save? [y/n]: ")
@@ -181,7 +186,13 @@ def add_income_record():
 
         item_name = input("Enter item name: ").upper()
         print(
-            "The following record has been entered: \n Item: {}\n amount: ${} \n Date:{} \n Category: {} \n Type: {}".format(item_name, amount, budget_item_date, category, value_type))
+            """The following record has been entered:
+            \n Item: {}
+            \n amount: ${}
+            \n Date:{}
+            \n Category: {}
+            \n Type: {}
+            """.format(item_name, amount, budget_item_date, category, value_type))
 
         while True:
             save_choice = input("Would you like to save? [y/n]: ")
@@ -209,8 +220,8 @@ def view_records():
     """View List of Budget Items"""
     table_view = Records
     cursor = db.execute_sql(
-        """SELECT id as ID,
-        strftime("%m-%d-%Y",budget_item_date) as Date
+        """SELECT id as ID
+        , strftime("%m-%d-%Y",budget_item_date) as Date
         , item_name as Item
         , amount as Amount
         , category as Category
@@ -348,20 +359,55 @@ def summary_report():
 # Pandas Analysis
 def run_pandas():
     """View Pandas Dataframe (Testing)"""
-    # for month in Records.budget_item_month:
-    #     print(month)
-
+    # Saving sqlite database query to pandas dataframe
     df = pd.read_sql_query("SELECT * FROM Records", db)
-    month_date = df['budget_item_month']
-    amount_total = df['amount']
-    budget_type = df['value_type']
-    categories = df['category']
 
-    plt.bar(budget_type, amount_total)
+    # Creating a Filter to show Expenses Breakdown Only
+    exp_filt = df['value_type'] == 'expense'
+
+    # Create a groups for category and value_type
+    exp_grp = df.loc[exp_filt].groupby(['category'])
+    value_type_grp = df.groupby(['value_type'])
+
+    # Sum values by category for expenses only
+    exp_cat_totals = exp_grp['amount'].sum()
+
+    # Save total expenses and income as series for barchart
+    exp_inc_tot = value_type_grp['amount'].sum()
+    exp_inc_labels = exp_inc_tot.keys()
+    colors = ['#8E2F5C', '#749D34']
+
+    # Combining Both Plots by Subplotting
+    plt.style.use('fivethirtyeight')
+
+    fig, (ax1) = plt.subplots(nrows = 1, ncols=1)
+    fig, (ax2) = plt.subplots(nrows = 1, ncols=1)
+
+    # Bar Chart Summary
+    ax1.set_title("Overall Summary for Expenses and Income", fontsize=15)
+    ax1.set_ylabel('Total Amount ($)')
+
+    ax1.bar(exp_inc_labels, exp_inc_tot, color=colors)
+
+    # Pie Chart Expense Breakdown Summary
+    ax2.set_title("Expenses Breakdown", fontsize=15)
+    slices = exp_cat_totals
+    labels = exp_cat_totals.keys()
+    x =.08
+    explode = [x,x,x,x,x,x]
+
+    ax2.pie(slices, labels=labels, autopct='%1.1f%%', pctdistance=.78, explode=explode)
+
+    #draw circle in middle of Pie chart for Dounut Style Chart
+    centre_circle = plt.Circle((0,0),0.60,fc='white')
+    fig = plt.gcf()
+    fig.gca().add_artist(centre_circle)
+
+
+
+    plt.tight_layout()
+    plt.axis('equal')
     plt.show()
-
-
-
 
 
 menu = OrderedDict([
