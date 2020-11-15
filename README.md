@@ -45,9 +45,11 @@ The following modules are used to run this application:
 
   1. Implement a “master loop” console application where the user can repeatedly enter commands/perform actions, including choosing to exit the program
   2. Create a dictionary or list, populate it with several values, retrieve at least one value, and use it in your program
-  3. Create a class, then create at least one object of that class and populate it with data
+  3. Create a class, then create at least one object of that class and populate it with data (see view_records and edit_record methods for example)
   4. Create and call at least 3 functions, at least one of which must return a value that is used
-  5. Visualize data in a graph, chart, or other visual representation of data
+  5. Read data from an external file, such as text, JSON, CSV, etc (sqlite database) and use that data in your application
+  6. Visualize data in a graph, chart, or other visual representation of data
+  7. Use pandas, matplotlib, and/or numpy to perform a data analysis project. Ingest 2 or more pieces of data, analyze that data in some manner, and display a new result to a graph, chart, or other display
 
 ## Milestones
 

@@ -6,7 +6,7 @@ import os
 import sys
 import pandas as pd
 from matplotlib import pyplot as plt
-from matplotlib import dates as mpl_dates
+
 
 # Third-party packages
 from peewee import *
@@ -26,7 +26,7 @@ class Records(BaseModel):
         default=datetime.datetime.now().date(), verbose_name="date")
     value_type = CharField(default=None)
     item_name = CharField()
-    amount = DecimalField(decimal_places=2, auto_round=True)
+    amount = DecimalField(decimal_places=2)
     category = CharField(default="None")
     budget_item_month = DateField(
         default=datetime.date.today().month)
@@ -40,13 +40,13 @@ def initialize():
     db.create_tables([BaseModel], safe=True)
     db.create_tables([Records], safe=True)
 
-
-def clear_cli():
-    pass
+# Clears terminal
+def clear():
+    os.system('cls' if os.name == 'nt' else 'clear')
 
 
 # Say welcome to the easy budget app!
-print("Welcome to the Easy Budget App! The interactive application that keeps track of all your expenses!")
+print("Welcome to the Easy Budget App! The interactive application that keeps track of all your expenses! \n\n")
 
 
 # Have user select from add item, view items, view chart or quit options:
@@ -55,13 +55,13 @@ def menu_loop():
     menu_choice = None
 
     while menu_choice != 'q':  # need test case here
-        print("Enter 'q' to quit")
         for key, value in menu.items():
             print(f'{key}) {value.__doc__}')
         menu_choice = input(
-            "Please choose an option: ").strip()
+            "Please choose an number option or enter 'q' to quit: ").strip(")")
 
         if menu_choice in menu:
+            clear()
             menu[menu_choice]()
 
 
@@ -69,7 +69,7 @@ def add_record():
     """Add New Record"""
     while True:
         entry_choice = input(
-            "Would you like to add a new expense item or income item? [e/i]: ")  # bug when entering anything other than e/i
+            "Would you like to add a new expense item or income item? [e/i]: ")
         if entry_choice.lower() == 'e':
             add_expense_record()
             break
@@ -77,7 +77,8 @@ def add_record():
             add_income_record()
             break
         else:
-            print("Not a valid choice. Please try again.")
+            clear()
+            print("Not a valid choice. Please try again. \n")
             continue
 
 
@@ -87,16 +88,23 @@ def add_expense_record():
     value_type = "expense"
     # Enter Date of Expense - may need unittest here
     while True:
+        clear()
         # Choose a category
         for key, value in expense_categories.items():
             print(f'{key}) {value}')
         category_choice = input(
-            "Choose an Expense category or Enter 'q' to quit. ").strip()
-        if category_choice.upper() == 'Q':
+            "Choose an Expense category or Enter 'q' to quit. ").strip(")")
+
+        if category_choice.lower() == 'q':
+            clear()
             break
 
         if category_choice in expense_categories:
             category = expense_categories[category_choice]
+        else:
+            clear()
+            print("Not a valid choice, please try again. \n")
+            continue
 
         expense_date = input(
             "Enter the date of the expense. Please use MM/DD/YYYY format. ")
@@ -107,24 +115,27 @@ def add_expense_record():
             budget_item_month = budget_item_date.month
             budget_item_year = budget_item_date.year
         except ValueError:
-            print("That's not a valid date. Please try again.")
+            clear()
+            print("That's not a valid date. Please try again. \n")
             continue
 
         try:  # test negative values
             amount = "%.2f" % float(
                 input("Enter cost amount in $$.$$ format "))
         except ValueError:
-            print("That's not a valid cost. Please try again.")
+            clear()
+            print("That's not a valid cost. Please try again. \n")
             continue
 
         item_name = input("Enter item name: ").upper()
+        clear()
         print(
             """The following record has been entered:
-            \n Item: {}
-            \n Amount: ${}
-            \n Date:{}
-            \n Category: {}
-            \n Type: {}""".format(item_name, amount, budget_item_date, category, value_type))
+        Item: {}
+        Amount: ${}
+        Date:{}
+        Category: {}
+        Type: {}""".format(item_name, amount, budget_item_date.strftime('%m-%d-%Y'), category, value_type))
 
         while True:
             save_choice = input("Would you like to save? [y/n]: ")
@@ -132,19 +143,27 @@ def add_expense_record():
                 Records.create(budget_item_date=budget_item_date, item_name=item_name,
                                amount=amount, category=category, value_type=value_type,
                                budget_item_month=budget_item_month, budget_item_year=budget_item_year)
+                clear()
                 print("Record Saved!")
                 break
+
             elif save_choice.lower() == 'n':
-                print("Record not saved")
+                clear()
+                print("Record not saved \n")
                 break
+
             elif save_choice.lower() != 'y' or save_choice.lower() != 'n':
-                print("Not a valid choice. Please try again.")
+                clear()
+                print("Not a valid choice. Please try again. \n")
                 continue
 
         cont_choice = input("Would you like to add another item? [y/n] ")
         if cont_choice.lower() == 'y':
+            clear()
             continue
+
         elif cont_choice.lower() == 'n':
+            clear()
             break
 
 
@@ -154,65 +173,80 @@ def add_income_record():
     value_type = "income"
 
     while True:
+        clear()
         # Choose a category
         for key, value in income_categories.items():
             print(f'{key}) {value}')
-        category_choice = input("Choose an Income category: ").strip()
+        category_choice = input(
+            "Choose an Income category. Enter 'q' to quit: ").strip(")")
 
-        if category_choice in income_categories:
+        if category_choice.lower() == 'q':
+            break
+        elif category_choice in income_categories:
             category = income_categories[category_choice]
+        else:
+            clear()
+            print("Not a valid choice, please try again. \n")
+            continue
 
           # Enter Date of Income - may need unittest here
         income_date = input(
-            "Enter the date of the income received. Please use MM/DD/YYYY format. Enter 'q' to quit")
-        if income_date.lower() == 'q':
-            break
-
+            "Enter the date of the income received. Please use MM/DD/YYYY format: ")
         try:
             budget_item_date = datetime.datetime.strptime(
                 income_date, date_format)
             budget_item_month = budget_item_date.month
             budget_item_year = budget_item_date.year
         except ValueError:
-            print("That's not a valid date. Please try again.")
+            print("That's not a valid date. Please try again. \n")
             continue
 
         try:
             amount = "%.2f" % float(
                 input("Enter cost amount in $$.$$ format "))
         except ValueError:
-            print("That's not a valid amount. Please try again.")
+            print("That's not a valid amount. Please try again. \n")
+            clear()
             continue
 
         item_name = input("Enter item name: ").upper()
+        clear()
         print(
-            """The following record has been entered:
-            \n Item: {}
-            \n amount: ${}
-            \n Date:{}
-            \n Category: {}
-            \n Type: {}
-            """.format(item_name, amount, budget_item_date, category, value_type))
+        """
+        The following information has been entered:
+        Item: {}
+        Amount: ${}
+        Date: {}
+        Category: {}
+        Type: {}
+        """.format(item_name, amount, budget_item_date.strftime('%m-%d-%Y'), category, value_type))
 
         while True:
             save_choice = input("Would you like to save? [y/n]: ")
             if save_choice.lower() == 'y':
                 Records.create(budget_item_date=budget_item_date, item_name=item_name,
-                               amount=amount, category=category, value_type=value_type,
-                               budget_item_month=budget_item_month, budget_item_year=budget_item_year)
+                                amount=amount, category=category, value_type=value_type,
+                                budget_item_month=budget_item_month, budget_item_year=budget_item_year)
+                clear()
                 print("Record Saved!")
                 break
             elif save_choice.lower() == 'n':
+                clear()
                 print("Record not saved")
                 break
+
             elif save_choice.lower() != 'y' or save_choice.lower() != 'n':
-                print("Not a valid choice. Please try again.")
+                clear()
+                print("Not a valid choice. Please try again. \n")
                 continue
 
         cont_choice = input("Would you like to add another item? [y/n] ")
         if cont_choice.lower() == 'y':
+            clear()
             continue
+
         elif cont_choice.lower() == 'n':
+            clear()
             break
 
 
@@ -233,6 +267,7 @@ def view_records():
 
     # from_db_cursor creates the pretty table using results from cursor object and saves to myTable
     myTable = from_db_cursor(cursor)
+    clear()
     print(myTable)
 
     rec_choice = input(
@@ -242,12 +277,14 @@ def view_records():
         try:
             if rec_choice.lower() in table_view.id:
                 record = table_view.get(table_view.id == rec_choice)
-                print(f"id: {record.id}")
-                print(f"Date: {record.budget_item_date.strftime('%m-%d-%Y')}")
-                print(f"Item: {record.item_name}")
-                print(f"Amount: {record.amount}")
-                print(f"Category: {record.category}")
-                print(f"Type: {record.value_type} \n\n")
+                clear()
+                print("ID: {}".format(record.id))
+                print("Date: {}".format(
+                    record.budget_item_date.strftime('%m-%d-%Y')))
+                print("Item: {}".format(record.item_name))
+                print("Amount: ${}".format("%.2f" % record.amount))
+                print("Category: {}".format(record.category))
+                print("Type: {} \n\n".format(record.value_type))
 
                 print("1) Edit this entry")
                 print("2) Delete this entry")
@@ -255,79 +292,111 @@ def view_records():
 
                 next_choice = input("Please select an option:  ")
                 if next_choice.strip(")") == '1':
+                    clear()
                     edit_record(record)
                     break
                 elif next_choice.strip(")") == '2':
                     delete_record(record)
                     break
                 elif next_choice.lower().strip() == 'q':
+                    clear()
                     break
         except:
-            return print("Not a valid option. Please try again.")
+            clear()
+            print("Not a valid option. Please try again. \n")
+            print(myTable)
+            rec_choice = input(
+                "Select a number if you want to view a specific record. Enter q to quit to main menu: ")
+            continue
 
 
 def edit_record(record):
     """Edit A Record"""
     date_format = '%m/%d/%Y'
 
-    print(f"1) Date: {record.budget_item_date.strftime('%m-%d-%Y')}")
-    print(f"2) Item: {record.item_name}")
-    print(f"3) Amount: {record.amount}")
-    print(f"4) Category: {record.category}")
-    print(f"5) Type: {record.value_type} \n\n")
+    while True:
+        print("1) Date: {}".format(
+            record.budget_item_date.strftime('%m-%d-%Y')))
+        print("2) Item: {}".format(record.item_name))
+        print("3) Amount: ${}".format("%.2f" % record.amount))
+        print("4) Category: {}".format(record.category))
 
-    column_choice = input(
-        "What field do you want to edit? Select a number: ")
+        print("Type 'q' to quit to main menu: ")
 
-    if column_choice == "1":
-        date_update_input = input("Enter new date in mm/dd/yyyy format: ")
-        try:
-            record.budget_item_date = datetime.datetime.strptime(
-                date_update_input, date_format)
-            record.budget_item_month = record.budget_item_date.month
-            record.budget_item_year = record.budget_item_date.year
-            record.save()
-            print("Record has been updated!")
-        except ValueError:
-            return print("Not a valid date. Please try again.")
+        column_choice = input(
+            "What field do you want to edit? Select a number: ")
 
-    if column_choice == "2":
-        item_update_input = input("Enter new item name: ")
-        try:
-            record.item_name = item_update_input.upper()
-            record.save()
-            print("Record has been updated!")
-        except ValueError:
-            print("Not a valid input. Please try again.")
+        if column_choice.lower() == 'q':
+            clear()
+            break
 
-    if column_choice == "3":
-        amount_update_input = input("Enter new amount in $$.$$ format: ")
-        try:
-            record.amount = amount_update_input
-            record.save()
-            print("Record has been updated!")
-        except ValueError:
-            print("Not a valid input. Please try again.")
-
-    if column_choice == "4":
-        for key, value in expense_categories.items():
-            print(f'{key}) {value}')
-        category_update_choice = input("Enter new category: ")
-
-        if category_update_choice in expense_categories:
+        if column_choice == "1":
+            date_update_input = input("Enter new date in mm/dd/yyyy format: ")
             try:
-                record.category = expense_categories[category_update_choice]
+                record.budget_item_date = datetime.datetime.strptime(
+                    date_update_input, date_format)
+                record.budget_item_month = record.budget_item_date.month
+                record.budget_item_year = record.budget_item_date.year
                 record.save()
-                print("Record has been updated!")
+                print("Record has been updated! \n")
+
             except ValueError:
-                print("Not a valid input. Please try again.")
+                return print("Not a valid date. Please try again. \n")
+
+        elif column_choice == "2":
+            item_update_input = input("Enter new item name: ")
+            try:
+                record.item_name = item_update_input.upper()
+                record.save()
+                clear()
+
+                print("Record has been updated! \n")
+                break
+
+            except ValueError:
+                print("Not a valid input. Please try again. \n")
+
+        elif column_choice == "3":
+            amount_update_input = "%.2f" % float(
+                input("Enter new amount in $$.$$ format: "))
+            try:
+                record.amount = amount_update_input
+                record.save()
+                print("Record has been updated! \n")
+                break
+            except ValueError:
+                print("Not a valid input. Please try again. \n")
+
+        elif column_choice == "4":
+            for key, value in expense_categories.items():
+                print(f'{key}) {value}')
+
+            category_update_choice = input("Enter new category: ")
+
+            if category_update_choice in expense_categories:
+                try:
+                    record.category = expense_categories[category_update_choice]
+                    record.save()
+                    clear()
+
+                    print("Record has been updated! \n")
+                    break
+
+                except ValueError:
+                    print("Not a valid input. Please try again. \n")
+
+        else:
+            clear()
+            print("Not a valid option. Please try again. \n")
+            continue
 
 
 def delete_record(record):
     """Delete A Record"""
-    if input("Are you sure? [y/n]").lower() == 'y':
+    if input("Are you sure? [y/n]: ").lower() == 'y':
         record.delete_instance()
-        print("Record Deleted!")
+        clear()
+        print("Record Deleted! \n")
 
 
 def summary_report():
@@ -358,7 +427,7 @@ def summary_report():
 
 # Pandas Analysis
 def run_pandas():
-    """View Pandas Dataframe (Testing)"""
+    """View Summary Charts"""
     # Saving sqlite database query to pandas dataframe
     df = pd.read_sql_query("SELECT * FROM Records", db)
 
@@ -380,8 +449,7 @@ def run_pandas():
     # Combining Both Plots by Subplotting
     plt.style.use('fivethirtyeight')
 
-    fig, (ax1) = plt.subplots(nrows = 1, ncols=1)
-    fig, (ax2) = plt.subplots(nrows = 1, ncols=1)
+    fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2)
 
     # Bar Chart Summary
     ax1.set_title("Overall Summary for Expenses and Income", fontsize=15)
@@ -393,20 +461,18 @@ def run_pandas():
     ax2.set_title("Expenses Breakdown", fontsize=15)
     slices = exp_cat_totals
     labels = exp_cat_totals.keys()
-    x =.08
-    explode = [x,x,x,x,x,x]
+    # x = .08
+    # explode = [x, x, x, x, x, x]
 
-    ax2.pie(slices, labels=labels, autopct='%1.1f%%', pctdistance=.78, explode=explode)
+    ax2.pie(slices, labels=labels, autopct='%1.1f%%',
+            pctdistance=.78, labeldistance=1.2)
 
-    #draw circle in middle of Pie chart for Dounut Style Chart
-    centre_circle = plt.Circle((0,0),0.60,fc='white')
+    # draw circle in middle of Pie chart for Dounut Style Chart
+    centre_circle = plt.Circle((0, 0), 0.60, fc='white')
     fig = plt.gcf()
     fig.gca().add_artist(centre_circle)
 
-
-
     plt.tight_layout()
-    plt.axis('equal')
     plt.show()
 
 
