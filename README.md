@@ -16,7 +16,9 @@
 
 ## Project Summary
 
-This is a budget application that allows users to enter expenses, savings and view data visualizations of the data.
+This is a budget application is a command line interface app that allows users to enter expenses, income, view records, and view data visualizations of the data.
+The user will be able to add records that will save to a sqlite database. In addition you can edit or delete previously saved records.
+The application uses a Object Relation Mapping (ORM) Database called [Peewee](https://docs.peewee-orm.com/en/latest/index.html) to create and manipulate databases.
 
 ## Technical Summary
 
@@ -27,10 +29,14 @@ The following technologies are used to build this application:
 
 The following modules are used to run this application:
 
+- datetime
 - collections
 - datetime
 - os
 - sys
+- pandas
+- prettytable
+- matplotlib
 - [peewee](https://docs.peewee-orm.com/en/latest/index.html)
 
 ## Features
@@ -56,7 +62,6 @@ The following modules are used to run this application:
 1. Create functions needed to add, remove, and edit expenses and income entries (Week 7)
 2. Create summary information based on expenses and income such as total expenses for the month or income remaining for the month (Week 8)
 3. Develop chart and graphs functionality (Week 9)
-4. Create basic user interface using tkinter module (Week 10)
 
 ## Requirements to Run Application
 
