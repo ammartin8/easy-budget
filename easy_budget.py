@@ -88,7 +88,6 @@ def add_expense_record():
     value_type = "expense"
     # Enter Date of Expense - may need unittest here
     while True:
-        clear()
         # Choose a category
         for key, value in expense_categories.items():
             print(f'{key}) {value}')
@@ -165,6 +164,11 @@ def add_expense_record():
         elif cont_choice.lower() == 'n':
             clear()
             break
+        else:
+            clear()
+            print("Not a valid choice.")
+            break
+
 
 
 def add_income_record():
@@ -173,7 +177,6 @@ def add_income_record():
     value_type = "income"
 
     while True:
-        clear()
         # Choose a category
         for key, value in income_categories.items():
             print(f'{key}) {value}')
@@ -247,6 +250,10 @@ def add_income_record():
 
         elif cont_choice.lower() == 'n':
             clear()
+            break
+        else:
+            clear()
+            print("Not a valid choice.")
             break
 
 
